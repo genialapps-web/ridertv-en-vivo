@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIDER TV — TV EN VIVO · ADMIN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000000; --red:#E50914; --red-dark:#B00710;
+    --green:#46d369; --text:#E5E5E5; --text-dim:#808080;
+    --card:#1f1f1f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#141414;color:var(--text);font-family:'Roboto',sans-serif;min-height:100vh;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:#000;}
+  ::-webkit-scrollbar-thumb{background:#333;border-radius:4px;}
+
+  .logo{font-family:'Bebas Neue',sans-serif;color:var(--red);font-size:26px;letter-spacing:2px;}
+  .logo span{color:#888;font-family:'Roboto';font-size:14px;letter-spacing:0;margin-left:6px;}
+
+  /* ===== LOGIN ===== */
+  #admin-login-overlay{min-height:100vh;background:#000;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-box{background:rgba(0,0,0,.85);border:1px solid #333;padding:50px 40px;border-radius:6px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  .login-box h2{font-size:28px;margin-bottom:26px;}
+  .login-box input{width:100%;padding:14px 16px;margin-bottom:16px;background:#333;border:1px solid transparent;border-radius:4px;color:#fff;font-size:15px;outline:none;transition:border-color .2s;}
+  .login-box input:focus{background:#454545;border-color:var(--red);}
+  .login-box button{width:100%;padding:13px;background:var(--red);color:#fff;border-radius:4px;font-size:16px;font-weight:700;transition:background .2s;}
+  .login-box button:hover{background:var(--red-dark);}
+  .login-error{color:var(--red);font-size:13px;margin-bottom:10px;display:none;}
+  .login-back{display:block;text-align:center;margin-top:18px;color:var(--text-dim);font-size:13px;transition:color .2s;}
+  .login-back:hover{color:#fff;}
+
+  /* ===== ADMIN PANEL ===== */
+  #admin-panel{display:none;}
+  .admin-header{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:#000;border-bottom:1px solid #262626;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:12px;}
+  .admin-header-right{display:flex;align-items:center;gap:16px;}
+  .admin-logout{font-size:13px;color:var(--text-dim);border:1px solid #555;padding:6px 14px;border-radius:3px;transition:all .2s;}
+  .admin-logout:hover{color:#fff;border-color:#fff;}
+  .admin-wrap{max-width:1100px;margin:0 auto;padding:40px 20px;}
+  .admin-title{font-size:24px;margin-bottom:26px;font-weight:700;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .admin-subtitle{font-size:14px;color:var(--text-dim);font-weight:400;}
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:13px;color:var(--text-dim);}
+  .field input, .field select, .field textarea{background:#1f1f1f;border:1px solid #333;color:#fff;padding:11px 12px;border-radius:4px;font-size:14px;outline:none;transition:border-color .2s;}
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--red);}
+  .field textarea{resize:vertical;min-height:80px;}
+
+  /* ===== BOTONES ===== */
+  .btn-group{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn-secondary{background:#333;color:#fff;padding:11px 20px;border-radius:4px;font-size:14px;font-weight:600;transition:background .2s;}
+  .btn-secondary:hover{background:#444;}
+  .btn-reset{background:transparent;color:var(--text-dim);border:1px solid #444;}
+  .btn-reset:hover{border-color:#666;color:#fff;}
+  .btn-cancel-edit{background:transparent;color:#ff6b6b;border:1px solid #5a1c1f;}
+  .btn-cancel-edit:hover{background:#5a1c1f;color:#fff;}
+
+  /* ===== IMAGEN ===== */
+  .image-drop{border:2px dashed #333;border-radius:6px;padding:30px 20px;text-align:center;color:var(--text-dim);cursor:pointer;transition:all .2s;position:relative;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+  .image-drop:hover{border-color:var(--red);background:rgba(229,9,20,.05);}
+  .image-drop img{max-height:200px;border-radius:6px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+  .image-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .upload-status{font-size:13px;margin-top:10px;}
+  .upload-status.ok{color:var(--green);}
+  .upload-status.err{color:var(--red);}
+  .upload-status.info{color:#ffc107;}
+
+  /* ===== EDICIÓN ===== */
+  .edit-mode-notice{background:rgba(229,9,20,.1);border:1px solid var(--red);padding:10px 14px;border-radius:4px;margin-bottom:20px;display:none;}
+  .edit-mode-notice.show{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+  /* ===== TABLA ===== */
+  .admin-list-title{margin:50px 0 18px;font-size:20px;font-weight:700;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  .admin-content-count{font-size:14px;color:var(--text-dim);font-weight:400;}
+  .admin-table{width:100%;border-collapse:collapse;}
+  .admin-table th{text-align:left;font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;padding:12px 14px;border-bottom:1px solid #2a2a2a;background:#1a1a1a;}
+  .admin-table td{padding:14px;border-bottom:1px solid #232323;font-size:14px;vertical-align:middle;}
+  .admin-table tr:hover{background:#1a1a1a;}
+  .admin-thumb{width:80px;height:45px;object-fit:cover;border-radius:4px;background:#333;}
+  .action-buttons{display:flex;gap:6px;flex-wrap:wrap;}
+  .edit-btn{background:transparent;border:1px solid #4dabf7;color:#4dabf7;padding:6px 10px;border-radius:3px;font-size:12px;transition:all .2s;}
+  .edit-btn:hover{background:#4dabf7;color:#000;}
+  .duplicate-btn{background:transparent;border:1px solid #ffc107;color:#ffc107;padding:6px 10px;border-radius:3px;font-size:12px;transition:all .2s;}
+  .duplicate-btn:hover{background:#ffc107;color:#000;}
+  .del-btn{background:transparent;border:1px solid #5a1c1f;color:#ff6b6b;padding:6px 10px;border-radius:3px;font-size:12px;transition:all .2s;}
+  .del-btn:hover{background:var(--red);color:#fff;border-color:var(--red);}
+  .admin-empty{padding:60px 20px;text-align:center;color:var(--text-dim);font-size:15px;}
+
+  /* ===== BOTÓN GUARDAR ===== */
+  .save-btn{margin-top:28px;background:var(--red);color:#fff;padding:14px 34px;border-radius:4px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:10px;transition:background .2s;}
+  .save-btn:hover{background:var(--red-dark);}
+  .save-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .spinner.show{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ===== TOAST ===== */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120%);background:#222;border-left:4px solid var(--red);padding:14px 24px;border-radius:4px;font-size:14px;z-index:6000;transition:transform .3s ease;box-shadow:0 6px 20px rgba(0,0,0,.5);max-width:90vw;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.ok{border-left-color:var(--green);}
+  .toast.warn{border-left-color:#ffc107;}
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px){
+    .admin-wrap{padding:24px 18px;}
+    .admin-grid{grid-template-columns:1fr;}
+    .admin-header{padding:16px 20px;flex-wrap:wrap;gap:12px;}
+  }
+  @media (max-width: 600px){
+    .login-box{padding:36px 26px;}
+    .admin-table{font-size:13px;}
+    .admin-table th:nth-child(5), .admin-table td:nth-child(5){display:none;}
+    .admin-thumb{width:60px;height:34px;}
+    .action-buttons{flex-direction:column;}
+    .save-btn{width:100%;justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="admin-login-overlay">
+  <div class="login-box">
+    <div class="logo" style="margin-bottom:24px;">RIDER TV <span>TV EN VIVO · ADMIN</span></div>
+    <h2>Acceso administrador</h2>
+    <div class="login-error" id="loginError">Contraseña incorrecta.</div>
+    <input type="password" id="adminPassword" placeholder="Escribe la contraseña">
+    <button id="loginSubmit">Ingresar al panel</button>
+    <a class="login-back" href="index.html">← Volver al catálogo</a>
+  </div>
+</div>
+
+<!-- ================= ADMIN PANEL ================= -->
+<div id="admin-panel">
+  <div class="admin-header">
+    <div class="logo">RIDER TV <span>TV EN VIVO · ADMIN</span></div>
+    <div class="admin-header-right">
+      <span style="font-size:13px;color:var(--text-dim);" id="sessionTimer">Sesión activa</span>
+      <button class="admin-logout" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </div>
+  <div class="admin-wrap">
+    <div class="admin-title">
+      <div>
+        <span id="formTitle">Agregar canal</span>
+        <div class="admin-subtitle" id="formSubtitle">Completa los datos del canal de TV en vivo 👇</div>
+      </div>
+      <button type="button" class="btn-reset" id="resetFormBtn">🗑️ Limpiar</button>
+    </div>
+
+    <div class="edit-mode-notice" id="editModeNotice">
+      <span>✏️ Estás editando un canal existente</span>
+      <button type="button" class="btn-cancel-edit" id="cancelEditBtn">Cancelar edición</button>
+    </div>
+
+    <form id="contentForm">
+      <div class="admin-grid">
+        <div class="field full">
+          <label>Nombre del Canal *</label>
+          <input type="text" id="f-title" required placeholder="Ej: Televisa, ESPN, CNN…">
+        </div>
+
+        <div class="field">
+          <label>Categoría *</label>
+          <select id="f-category" required>
+            <option value="Noticias">📰 Noticias</option>
+            <option value="Deportes">⚽ Deportes</option>
+            <option value="Entretenimiento">🎬 Entretenimiento</option>
+            <option value="Películas">🎞️ Películas</option>
+            <option value="Infantil">🧒 Infantil</option>
+            <option value="Música">🎵 Música</option>
+            <option value="Educativo">📚 Educativo</option>
+            <option value="Internacional">🌍 Internacional</option>
+            <option value="Religioso">✝️ Religioso</option>
+            <option value="Otros">📺 Otros</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>País / Origen *</label>
+          <input type="text" id="f-country" required placeholder="Ej: México, España, Estados Unidos…">
+        </div>
+        <div class="field">
+          <label>Idioma *</label>
+          <input type="text" id="f-language" required placeholder="Ej: Español, Inglés…">
+        </div>
+        <div class="field">
+          <label>Calificación (0–10)</label>
+          <input type="number" id="f-rating" min="0" max="10" step="0.1" placeholder="Ej: 8.5">
+        </div>
+
+        <div class="field full">
+          <label>🔗 Enlace de Streaming *</label>
+          <input type="url" id="f-streamUrl" required placeholder="https://ejemplo.com/stream.m3u8 o directo">
+          <small style="color:var(--text-dim);font-size:12px;">Soporta: M3U8, MP4, enlaces directos de streaming</small>
+        </div>
+
+        <div class="field full">
+          <label>Descripción del Canal</label>
+          <textarea id="f-description" placeholder="Breve descripción del canal, programación, tipo de contenido…"></textarea>
+        </div>
+
+        <div class="field full">
+          <label>🖼️ Logo / Portada del Canal *</label>
+          <div class="image-drop" id="imageDrop">
+            <div id="imageDropContent">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Haz clic o arrastra el logo del canal aquí</span>
+              <small style="color:#666; margin-top:4px;">Se subirá automáticamente</small>
+            </div>
+            <input type="file" id="f-image" accept="image/*">
+          </div>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="save-btn" id="saveBtn">
+          <span class="spinner" id="saveSpinner"></span>
+          <span id="saveBtnText">Guardar Canal</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="admin-list-title">
+      <div>
+        Canales en vivo
+        <span class="admin-content-count" id="contentCount">0 canales</span>
+      </div>
+    </div>
+    <table class="admin-table" id="adminTable">
+      <thead>
+        <tr>
+          <th>Logo</th>
+          <th>Canal</th>
+          <th>Categoría</th>
+          <th>País</th>
+          <th>Calificación</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="adminTableBody"></tbody>
+    </table>
+    <div class="admin-empty" id="adminEmpty" style="display:none;">
+      📭 Aún no hay canales agregados.<br>
+      <span style="font-size:13px;color:var(--text-dim);">Agrega tu primer canal de TV en vivo arriba.</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ================= FIREBASE ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.1/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.1/firebase-firestore-compat.min.js"></script>
+<script>
+// ==============================================
+// 🔥 TU FIREBASE — CONFIGURACIÓN
+// ==============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAUDEEpWkNe6c0906r6zrO4SrBuY9j3C6I",
+  authDomain: "ridertv-channel.firebaseapp.com",
+  projectId: "ridertv-channel",
+  storageBucket: "ridertv-channel.firebasestorage.app",
+  messagingSenderId: "565981479941",
+  appId: "1:565981479941:web:d81f0e0ff3eeec3b6f086c",
+  measurementId: "G-7KEJSY65T3"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const COLLECTION_NAME = "canales_tv";
+const IMGBB_API_KEY = "7be05fd20df981386917bd48040cbe78";
+const ADMIN_PASSWORD = "admin123"; // 🔑 CAMBIA ESTA CONTRASEÑA A LA TUYA
+
+function $(sel){ return document.querySelector(sel); }
+
+// ========== ESTADO ==========
+let CHANNELS = [];
+let pendingImageUrl = "";
+let editingId = null;
+
+// ========== UTILIDADES ==========
+function showToast(msg, ok=true){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.remove("ok");
+  if(ok) t.classList.add("ok");
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=> t.classList.remove("show"), 3500);
+}
+
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
+/* ============================================================
+   LOGIN — CORREGIDO Y SIMPLIFICADO ✅
+   ============================================================ */
+document.addEventListener("DOMContentLoaded", function(){
+  console.log("✅ Página cargada correctamente");
+  
+  // Login con botón
+  $("#loginSubmit").addEventListener("click", attemptLogin);
+  
+  // Login con Enter
+  $("#adminPassword").addEventListener("keydown", (e)=>{ 
+    if(e.key === "Enter") attemptLogin(); 
+  });
+});
+
+function attemptLogin(){
+  const val = $("#adminPassword").value.trim();
+  console.log("🔑 Contraseña ingresada:", val);
+  console.log("🔑 Contraseña esperada:", ADMIN_PASSWORD);
+  
+  if(val === ADMIN_PASSWORD){
+    console.log("✅ Contraseña correcta — entrando...");
+    $("#adminPassword").value = "";
+    $("#loginError").style.display = "none";
+    enterAdminPanel();
+  } else {
+    console.log("❌ Contraseña incorrecta");
+    $("#loginError").style.display = "block";
+    $("#adminPassword").value = "";
+    $("#adminPassword").focus();
+  }
+}
+
+function enterAdminPanel(){
+  $("#admin-login-overlay").style.display = "none";
+  $("#admin-panel").style.display = "block";
+  console.log("✅ Panel de administración abierto");
+  listenChannels();
+}
+
+$("#logoutBtn").addEventListener("click", ()=>{
+  if(confirm("¿Cerrar sesión de administrador?")){
+    window.location.reload();
+  }
+});
+
+/* ============================================================
+   FIREBASE — ESCUCHAR CANALES
+   ============================================================ */
+function listenChannels(){
+  db.collection(COLLECTION_NAME).orderBy("createdAt", "desc")
+    .onSnapshot(snap=>{
+      CHANNELS = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+      renderAdminTable();
+    }, err=>{
+      console.error("❌ Error leyendo canales:", err);
+      showToast("No se pudo conectar con la base de datos. Revisa las reglas de Firestore.", false);
+    });
+}
+
+/* ============================================================
+   IMAGEN — SUBIDA A IMGBB
+   ============================================================ */
+$("#f-image").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  uploadToImgBB(file);
+});
+
+function uploadToImgBB(file){
+  const status = $("#uploadStatus");
+  const dropContent = $("#imageDropContent");
+  status.className = "upload-status info";
+  status.textContent = "Subiendo logo…";
+  pendingImageUrl = "";
+
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    dropContent.innerHTML = `<img src="${reader.result}" alt="Vista previa" style="max-width:100%;">`;
+    const base64 = reader.result.split(",")[1];
+    const formData = new FormData();
+    formData.append("image", base64);
+
+    try{
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST", body: formData
+      });
+      const data = await res.json();
+      if(data.success){
+        pendingImageUrl = data.data.url;
+        status.textContent = "✅ Logo subido correctamente";
+        status.className = "upload-status ok";
+      } else {
+        throw new Error(data.error?.message || "Error desconocido");
+      }
+    }catch(err){
+      console.error("❌ ImgBB error:", err);
+      status.textContent = "❌ Error: " + err.message;
+      status.className = "upload-status err";
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   EDITAR / DUPLICAR / ELIMINAR
+   ============================================================ */
+function startEditing(item){
+  editingId = item.id;
+  $("#formTitle").textContent = "Editar Canal";
+  $("#formSubtitle").textContent = "Modifica los datos del canal de TV";
+  $("#editModeNotice").classList.add("show");
+  $("#saveBtnText").textContent = "Actualizar Canal";
+
+  $("#f-title").value = item.title || "";
+  $("#f-category").value = item.category || "Otros";
+  $("#f-country").value = item.country || "";
+  $("#f-language").value = item.language || "";
+  $("#f-rating").value = item.rating || "";
+  $("#f-streamUrl").value = item.streamUrl || "";
+  $("#f-description").value = item.description || "";
+
+  if (item.imageUrl) {
+    pendingImageUrl = item.imageUrl;
+    $("#imageDropContent").innerHTML = `<img src="${item.imageUrl}" alt="Vista previa">`;
+    $("#uploadStatus").textContent = "Logo actual — puedes cambiarlo";
+    $("#uploadStatus").className = "upload-status info";
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function cancelEditing(){
+  editingId = null;
+  $("#formTitle").textContent = "Agregar canal";
+  $("#formSubtitle").textContent = "Completa los datos del canal de TV en vivo 👇";
+  $("#editModeNotice").classList.remove("show");
+  $("#saveBtnText").textContent = "Guardar Canal";
+  resetForm();
+}
+
+$("#cancelEditBtn").addEventListener("click", cancelEditing);
+
+/* ============================================================
+   GUARDAR CANAL EN FIREBASE
+   ============================================================ */
+$("#contentForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  
+  if(!pendingImageUrl){ 
+    showToast="Espera a que se suba el logo.", false; 
+    return; 
+  }
+
+  const campos = ["f-title", "f-category", "f-country", "f-language", "f-streamUrl"];
+  for(const id of campos){
+    if(!$(`#${id}`).value.trim()){
+      showToast("Completa todos los campos obligatorios (*)", false);
+      return;
+    }
+  }
+
+  const saveBtn = $("#saveBtn");
+  const spinner = $("#saveSpinner");
+  saveBtn.disabled = true;
+  spinner.classList.add("show");
+  $("#saveBtnText").textContent = editingId ? "Actualizando…" : "Guardando…";
+
+  const newChannel = {
+    title: $("#f-title").value.trim(),
+    category: $("#f-category").value,
+    country: $("#f-country").value.trim(),
+    language: $("#f-language").value.trim(),
+    rating: Number($("#f-rating").value) || 0,
+    streamUrl: $("#f-streamUrl").value.trim(),
+    imageUrl: pendingImageUrl,
+    description: $("#f-description").value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try{
+    if(editingId){
+      await db.collection(COLLECTION_NAME).doc(editingId).update(newChannel);
+      showToast("✅ Canal actualizado correctamente", true);
+    } else {
+      newChannel.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection(COLLECTION_NAME).add(newChannel);
+      showToast("✅ Canal agregado al catálogo", true);
+    }
+    cancelEditing();
+  }catch(err){
+    console.error("❌ Error Firestore:", err);
+    showToast("❌ Error: " + err.message, false);
+  }finally{
+    saveBtn.disabled = false;
+    spinner.classList.remove("show");
+    $("#saveBtnText").textContent = editingId ? "Actualizar Canal" : "Guardar Canal";
+  }
+});
+
+$("#resetFormBtn").addEventListener("click", ()=>{
+  if(editingId){
+    if(!confirm("¿Cancelar edición y limpiar?")) return;
+    cancelEditing();
+    return;
+  }
+  if(!confirm("¿Limpiar todos los campos?")) return;
+  resetForm();
+});
+
+function resetForm(){
+  $("#contentForm").reset();
+  pendingImageUrl = "";
+  $("#imageDropContent").innerHTML = `
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span>Haz clic o arrastra el logo del canal aquí</span>
+  `;
+  $("#uploadStatus").textContent = "";
+  $("#uploadStatus").className = "upload-status";
+}
+
+/* ============================================================
+   RENDERIZAR TABLA DE ADMINISTRACIÓN
+   ============================================================ */
+function renderAdminTable(){
+  const tbody = $("#adminTableBody");
+  const empty = $("#adminEmpty");
+  $("#contentCount").textContent = `${CHANNELS.length} canal${CHANNELS.length===1?"":"es"}`;
+  if(CHANNELS.length === 0){ tbody.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  tbody.innerHTML = CHANNELS.map(item => `
+    <tr>
+      <td><img class="admin-thumb" src="${item.imageUrl}" alt="${escapeHtml(item.title)}"></td>
+      <td><strong>${escapeHtml(item.title)}</strong></td>
+      <td><span class="type-pill">${item.category}</span></td>
+      <td>${item.country}</td>
+      <td>${item.rating ? Number(item.rating).toFixed(1) : "—"}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="edit-btn" data-id="${item.id}">✏️ Editar</button>
+          <button class="duplicate-btn" data-id="${item.id}">📋</button>
+          <button class="del-btn" data-id="${item.id}">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  tbody.querySelectorAll(".edit-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=> startEditing(CHANNELS.find(i=>i.id === btn.dataset.id)));
+  });
+  tbody.querySelectorAll(".duplicate-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=> duplicateChannel(btn.dataset.id));
+  });
+  tbody.querySelectorAll(".del-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=> deleteChannel(btn.dataset.id, btn));
+  });
+}
+
+function duplicateChannel(id){
+  const item = CHANNELS.find(i=>i.id === id);
+  if(!item) return;
+  if(!confirm(`¿Crear copia de "${item.title}"?`)) return;
+  editingId = null;
+  $("#formTitle").textContent = "Agregar Canal (copia)";
+  $("#saveBtnText").textContent = "Guardar Canal";
+  $("#f-title").value = item.title + " (copia)";
+  $("#f-category").value = item.category;
+  $("#f-country").value = item.country;
+  $("#f-language").value = item.language;
+  $("#f-rating").value = item.rating;
+  $("#f-streamUrl").value = item.streamUrl;
+  $("#f-description").value = item.description;
+  if (item.imageUrl) {
+    pendingImageUrl = item.imageUrl;
+    $("#imageDropContent").innerHTML = `<img src="${item.imageUrl}" alt="Vista previa">`;
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("Copia lista ✅", true);
+}
+
+async function deleteChannel(id, btn){
+  const item = CHANNELS.find(i=>i.id === id);
+  if(!confirm(`¿Eliminar "${item ? item.title : "este canal"}"?\nNo se puede deshacer.`)) return;
+  btn.disabled = true;
+  btn.textContent = "…";
+  try{
+    await db.collection(COLLECTION_NAME).doc(id).delete();
+    showToast("✅ Canal eliminado", true);
+    if(editingId === id) cancelEditing();
+  }catch(err){
+    console.error("❌ Error eliminando:", err);
+    showToast("❌ Error: " + err.message, false);
+    btn.disabled = false;
+    btn.textContent = "🗑️";
+  }
+}
+</script>
+</body>
+</html>
