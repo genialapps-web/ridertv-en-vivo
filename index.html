@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIDER TV — TV EN VIVO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000000; --red:#E50914; --red-dark:#B00710;
+    --green:#46d369; --text:#E5E5E5; --text-dim:#808080;
+    --card:#141414; --card-hover:#1f1f1f; --heart:#ff4757;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Roboto',sans-serif;min-height:100vh;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:#000;}
+  ::-webkit-scrollbar-thumb{background:#333;border-radius:4px;}
+
+  /* ===== HEADER ===== */
+  .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(to bottom,rgba(0,0,0,.9),transparent);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;transition:background .3s;}
+  .header.scrolled{background:rgba(0,0,0,.95);box-shadow:0 2px 10px rgba(0,0,0,.5);}
+  .logo{font-family:'Bebas Neue',sans-serif;color:var(--red);font-size:28px;letter-spacing:2px;}
+  .logo span{color:#fff;font-family:'Roboto';font-size:14px;letter-spacing:0;margin-left:8px;}
+  .header-right{display:flex;align-items:center;gap:20px;}
+  .search-box{background:rgba(51,51,51,.6);border:1px solid transparent;border-radius:4px;padding:8px 14px;color:#fff;font-size:14px;width:260px;outline:none;transition:all .2s;}
+  .search-box:focus{background:rgba(30,30,30,.9);border-color:var(--red);}
+  .admin-link{color:var(--text-dim);font-size:13px;padding:6px 12px;border:1px solid #333;border-radius:4px;transition:all .2s;}
+  .admin-link:hover{color:#fff;border-color:#666;}
+
+  /* ===== TABS CATEGORÍAS ===== */
+  .categories-wrap{padding:20px 40px 90px;}
+  .category-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px;}
+  .category-tab{background:transparent;color:var(--text-dim);border:1px solid #333;padding:8px 18px;border-radius:20px;font-size:14px;transition:all .2s;cursor:pointer;}
+  .category-tab:hover, .category-tab.active{border-color:var(--red);color:#fff;background:rgba(229,9,20,.1);}
+  .section-title{font-size:22px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+  .channels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:24px;}
+  @media(min-width:500px){.channels-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}}
+  @media(min-width:900px){.channels-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}}
+
+  /* ===== TARJETA DE CANAL ===== */
+  .channel-card{background:var(--card);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s;position:relative;}
+  .channel-card:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(0,0,0,.5);background:var(--card-hover);z-index:10;}
+  .card-logo-wrap{aspect-ratio:16/9;background:#1a1a1a;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;}
+  .card-logo{width:100%;height:100%;object-fit:cover;}
+  
+  /* ===== BOTÓN DE FAVORITOS ===== */
+  .fav-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .2s;z-index:10;}
+  .fav-btn:hover{transform:scale(1.2);background:rgba(0,0,0,.8);}
+  .fav-btn.active{color:var(--heart);}
+  
+  .card-info{padding:12px;}
+  .card-name{font-size:14px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-meta{font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between;align-items:center;}
+  .card-live{color:var(--red);font-weight:600;font-size:11px;display:flex;align-items:center;gap:4px;}
+  .card-live::before{content:'●';font-size:10px;}
+
+  /* ===== ANUNCIOS ===== */
+  .ad-container{margin:30px 0;padding:20px;background:#1a1a1a;border-radius:8px;border:1px solid #2a2a2a;}
+  .ad-label{color:#888;font-size:12px;margin-bottom:10px;}
+  .ad-banner-bottom{position:fixed;bottom:0;left:0;right:0;background:#0f0f0f;padding:10px 0;border-top:1px solid #333;z-index:999;}
+  .ad-banner-bottom .ad-label{text-align:center;margin-bottom:6px;}
+  .ad-bottom-content{display:flex;justify-content:center;align-items:center;min-height:50px;}
+
+  /* ===== ESTADOS ===== */
+  .empty-state{text-align:center;padding:80px 20px;color:var(--text-dim);}
+  .loading-state{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--text-dim);}
+  .spinner{width:24px;height:24px;border:3px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty-favorites{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-dim);}
+
+  /* ===== REPRODUCTOR ===== */
+  .hero-section{padding-top:80px;}
+  .player-container{position:relative;width:100%;background:#0a0a0a;aspect-ratio:16/9;max-height:50vh;display:flex;align-items:center;justify-content:center;}
+  .player-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);height:100%;min-height:250px;text-align:center;padding:20px;}
+  .player-placeholder svg{width:80px;height:80px;margin-bottom:20px;opacity:.4;}
+  .open-hint{color:var(--green);font-size:14px;margin-top:12px;}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:900px){
+    .header{padding:12px 16px;}
+    .search-box{width:180px;}
+    .categories-wrap{padding:16px 16px 90px;}
+    .channels-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:16px;}
+  }
+  @media(max-width:600px){
+    .search-box{display:none;}
+    .header-right{gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="header" id="header">
+  <div class="logo">RIDER TV <span>TV EN VIVO</span></div>
+  <div class="header-right">
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 Buscar canal…">
+    <a href="admin.html" class="admin-link">⚙️ Admin</a>
+  </div>
+</header>
+
+<!-- ================= REPRODUCTOR ================= -->
+<section class="hero-section">
+  <div class="player-container">
+    <div class="player-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+        <path d="M15.94 11.56a5 5 0 1 1-7.88 0 5 5 0 0 1 7.88 0z"/>
+        <path d="M9 10v4l3-2 3 2v-4"/>
+      </svg>
+      <h2>Elige un canal para ver en vivo</h2>
+      <p style="color:#888; margin-top:8px;">¡Apóyanos con un anuncio para mantener la plataforma gratis! ❤️</p>
+      <p class="open-hint">🔗 Se abre en ventana nueva</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CATÁLOGO ================= -->
+<section class="categories-wrap">
+  <div class="category-tabs" id="categoryTabs">
+    <button class="category-tab active" data-category="all">📺 Todos</button>
+    <button class="category-tab" data-category="favorites">❤️ Favoritos</button>
+    <button class="category-tab" data-category="Noticias">📰 Noticias</button>
+    <button class="category-tab" data-category="Deportes">⚽ Deportes</button>
+    <button class="category-tab" data-category="Entretenimiento">🎬 Entretenimiento</button>
+    <button class="category-tab" data-category="Películas">🎞️ Películas</button>
+    <button class="category-tab" data-category="Infantil">🧒 Infantil</button>
+    <button class="category-tab" data-category="Música">🎵 Música</button>
+    <button class="category-tab" data-category="Educativo">📚 Educativo</button>
+    <button class="category-tab" data-category="Internacional">🌍 Internacional</button>
+    <button class="category-tab" data-category="Religioso">✝️ Religioso</button>
+    <button class="category-tab" data-category="Otros">📺 Otros</button>
+  </div>
+
+  <h2 class="section-title" id="sectionTitle">📡 Canales en Vivo</h2>
+
+  <!-- 🎥 ANUNCIO NATIVO CON VIDEO -->
+  <div class="ad-container">
+    <p class="ad-label">Publicidad</p>
+    <script async="async" data-cfasync="false" src="https://pl28568471.profitableratecpmnetwork.com/4748d85c1abfef74f84c500c95a5a13f/invoke.js"></script>
+    <div id="container-4748d85c1abfef74f84c500c95a5a13f"></div>
+  </div>
+
+  <div id="loadingState" class="loading-state">
+    <div class="spinner"></div>
+    <span>Cargando canales…</span>
+  </div>
+
+  <div class="channels-grid" id="channelsGrid" style="display:none;"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <h3>No hay canales disponibles</h3>
+    <p>Agrega canales desde el panel de administración.</p>
+  </div>
+</section>
+
+<!-- 📱 BANNER FIJO INFERIOR -->
+<div class="ad-banner-bottom">
+  <p class="ad-label">Publicidad</p>
+  <div class="ad-bottom-content">
+    <!-- Código de banner de Adsterra aquí (formato 320x50 o 728x90) -->
+  </div>
+</div>
+
+<!-- ================= FIREBASE ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.1/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.1/firebase-firestore-compat.min.js"></script>
+<script>
+// ==============================================
+// 🔥 FIREBASE & CONFIG
+// ==============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAUDEEpWkNe6c0906r6zrO4SrBuY9j3C6I",
+  authDomain: "ridertv-channel.firebaseapp.com",
+  projectId: "ridertv-channel",
+  storageBucket: "ridertv-channel.firebasestorage.app",
+  messagingSenderId: "565981479941",
+  appId: "1:565981479941:web:d81f0e0ff3eeec3b6f086c",
+  measurementId: "G-7KEJSY65T3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const COLLECTION_NAME = "canales_tv";
+
+// 🔗 SMARTLINK
+const SMARTLINK_URL = "https://www.profitableratecpmnetwork.com/m6376xa8z?key=771a3ef49f2207627ba80160474c0226";
+
+function $(sel){ return document.querySelector(sel); }
+
+// ==============================================
+// ❤️ SISTEMA DE FAVORITOS (se guarda en el navegador)
+// ==============================================
+let favorites = JSON.parse(localStorage.getItem('ridertv_favorites') || '[]');
+
+function toggleFavorite(channelId, event){
+  event.stopPropagation(); // No abrir el canal al dar clic al corazón
+  const index = favorites.indexOf(channelId);
+  if(index > -1){
+    favorites.splice(index, 1);
+  } else {
+    favorites.push(channelId);
+  }
+  localStorage.setItem('ridertv_favorites', JSON.stringify(favorites));
+  renderChannels(); // Volver a dibujar para actualizar corazones
+}
+
+function isFavorite(channelId){
+  return favorites.includes(channelId);
+}
+
+// ==============================================
+// 📋 ESTADO Y NAVEGACIÓN
+// ==============================================
+let ALL_CHANNELS = [];
+let FILTERED_CHANNELS = [];
+let currentCategory = "all";
+let isClicking = false;
+
+// Header scroll effect
+window.addEventListener("scroll", ()=>{
+  if(window.scrollY > 20) $("#header").classList.add("scrolled");
+  else $("#header").classList.remove("scrolled");
+});
+
+// ==============================================
+// 📺 ABRIR CANAL — SMARTLINK + VENTANA NUEVA
+// ==============================================
+function openChannel(streamUrl, title){
+  if(isClicking) return;
+  isClicking = true;
+
+  // 1. Abre Smartlink 💰
+  window.open(SMARTLINK_URL, '_blank');
+  
+  // 2. Abre el canal en ventana nueva 📺
+  setTimeout(()=>{
+    window.open(streamUrl, '_blank', 'width=1280,height=720,titlebar=yes,toolbar=yes');
+    alert(`📺 Abriendo: ${title}\n❤️ Gracias por apoyar! La plataforma es gratis gracias a los anuncios.`);
+    isClicking = false;
+  }, 800);
+}
+
+// ==============================================
+// 🔄 CARGAR Y RENDERIZAR CANALES
+// ==============================================
+function renderChannels(){
+  const grid = $("#channelsGrid");
+  const emptyState = $("#emptyState");
+  const loadingState = $("#loadingState");
+  
+  loadingState.style.display = "none";
+  
+  // Filtrar
+  FILTERED_CHANNELS = ALL_CHANNELS.filter(ch => {
+    if(currentCategory === "all") return true;
+    if(currentCategory === "favorites") return isFavorite(ch.id);
+    return ch.category === currentCategory;
+  });
+
+  // Buscar
+  const searchTerm = $("#searchInput").value.toLowerCase().trim();
+  if(searchTerm){
+    FILTERED_CHANNELS = FILTERED_CHANNELS.filter(ch => 
+      (ch.title || "").toLowerCase().includes(searchTerm) ||
+      (ch.country || "").toLowerCase().includes(searchTerm)
+    );
+  }
+
+  // Actualizar título
+  $("#sectionTitle").textContent = currentCategory === "favorites" 
+    ? "❤️ Mis Favoritos" 
+    : currentCategory === "all" 
+      ? "📡 Canales en Vivo" 
+      : `${currentCategory}`;
+
+  // Mostrar
+  if(FILTERED_CHANNELS.length === 0){
+    grid.style.display = "none";
+    emptyState.style.display = "block";
+    emptyState.innerHTML = currentCategory === "favorites"
+      ? `<div class="empty-favorites">❤️<br>Todavía no tienes favoritos.<br>Da clic al corazón en cualquier canal para guardarlo.</div>`
+      : `<h3>No hay canales disponibles</h3><p>Agrega canales desde el panel de administración.</p>`;
+    return;
+  }
+
+  grid.style.display = "grid";
+  emptyState.style.display = "none";
+
+  // Renderizar tarjetas
+  grid.innerHTML = FILTERED_CHANNELS.map(ch => `
+    <div class="channel-card" data-stream="${ch.streamUrl}" data-title="${escapeHtml(ch.title)}" data-id="${ch.id}">
+      <div class="card-logo-wrap">
+        <button class="fav-btn ${isFavorite(ch.id) ? 'active' : ''}" onclick="toggleFavorite('${ch.id}', event)">
+          ${isFavorite(ch.id) ? '❤️' : '🤍'}
+        </button>
+        <img class="card-logo" src="${ch.imageUrl}" alt="${escapeHtml(ch.title)}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z%22/><path d=%22M9 10v4l3-2 3 2v-4%22/></svg>'">
+      </div>
+      <div class="card-info">
+        <h3 class="card-name">${escapeHtml(ch.title)}</h3>
+        <div class="card-meta">
+          <span>${ch.country || "—"}</span>
+          <span class="card-live">EN VIVO</span>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  // Asignar eventos de clic
+  grid.querySelectorAll(".channel-card").forEach(card => {
+    card.addEventListener("click", ()=>{
+      const streamUrl = card.dataset.stream;
+      const title = card.dataset.title;
+      openChannel(streamUrl, title);
+    });
+  });
+}
+
+async function loadChannels(){
+  try {
+    const snapshot = await db.collection(COLLECTION_NAME).orderBy("title").get();
+    ALL_CHANNELS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderChannels();
+  } catch (err) {
+    console.error("Error cargando canales:", err);
+    $("#loadingState").innerHTML = `<span style="color:var(--red);">❌ Error cargando canales</span>`;
+  }
+}
+
+// ==============================================
+// 🎯 EVENTOS DE CATEGORÍAS Y BÚSQUEDA
+// ==============================================
+document.querySelectorAll(".category-tab").forEach(tab => {
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".category-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentCategory = tab.dataset.category;
+    renderChannels();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+
+$("#searchInput").addEventListener("input", renderChannels);
+
+// ==============================================
+// 🛠️ UTILIDADES
+// ==============================================
+function escapeHtml(str){
+  if(!str) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==============================================
+// 🚀 INICIO
+// ==============================================
+document.addEventListener("DOMContentLoaded", loadChannels);
+</script>
+</body>
+</html>
